@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Waste Capture</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0fdf4;
+      color: #2e7d32;
+      text-align: center;
+      padding: 30px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    video, canvas {
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      margin-top: 20px;
+    }
+
+    button {
+      background-color: #2e7d32;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #1b5e20;
+    }
+
+    .image-container {
+      margin-top: 30px;
+    }
+
+    #captured-image {
+      display: none;
+      margin-top: 20px;
+      border-radius: 15px;
+      max-width: 90%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📷 Capture Waste Image</h1>
+  <p>Use your camera to click a photo of the waste item.</p>
+
+  <video id="camera" width="320" height="240" autoplay></video>
+  <br>
+  <button onclick="capture()">📸 Capture</button>
+
+  <div class="image-container">
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+    <img id="captured-image" alt="Captured waste image"/>
+  </div>
+
+  <script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('canvas');
+    const img = document.getElementById('captured-image');
+    const context = canvas.getContext('2d');
+
+    // Access camera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(error => {
+        alert("Camera access denied or not supported.");
+        console.error(error);
+      });
+
+    function capture() {
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/png');
+      img.src = imageData;
+      img.style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>

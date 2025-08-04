@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Community Feed | Bin It Right</title>
+  <style>
+    .feed-container {
+  max-width: 800px;
+  margin: 50px auto;
+  padding: 20px;
+}
+
+.feed-container h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #2c5f2d;
+}
+
+.feed-post {
+  background: #e1f5e9;
+  border-radius: 10px;
+  margin-bottom: 30px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.feed-post img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.post-info {
+  padding: 15px;
+}
+
+.post-info p {
+  margin-bottom: 10px;
+  color: #2e3d2f;
+}
+
+.vote-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.vote {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.vote.red {
+  background-color: #e53935;
+}
+
+.vote.yellow {
+  background-color: #fdd835;
+  color: #333;
+}
+
+.vote.green {
+  background-color: #43a047;
+}
+
+
+.report-footer {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.report-link {
+  display: inline-block;
+  padding: 12px 24px;
+  background-color: #4caf50;
+  color: white;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.report-link:hover {
+  background-color: #388e3c;
+}
+
+header {
+  background: url('https://wallpapers.com/images/hd/foggy-road-in-the-greenery-14nynhc1vprvdtz4.jpg') no-repeat center center/cover;
+  color: white;
+  padding: 20px 0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f3fff4;
+  color: #2e3d2f;
+}
+
+/* Navigation Bar */
+header {
+  background-color: #e1f5e9;
+  padding: 15px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-container {
+  width: 90%;
+  max-width: 1100px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2c5f2d;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 30px;
+  position: relative;
+}
+
+.nav-links li {
+  position: relative;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #2c5f2d;
+  font-weight: 500;
+  transition: color 0.3s;
+  padding: 8px 12px;
+  display: inline-block;
+}
+
+.nav-links a:hover {
+  color: #4caf50;
+}
+
+/* Dropdown Styles */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 35px;
+  left: 0;
+  background-color: #ffffff;
+  border: 1px solid #c8e6c9;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  z-index: 100;
+  min-width: 140px;
+}
+
+.dropdown-menu li {
+  display: block;
+}
+
+.dropdown-menu li a {
+  padding: 10px 15px;
+  color: #2c5f2d;
+}
+
+.dropdown-menu li a:hover {
+  background-color: #e0f2f1;
+  color: #388e3c;
+}
+
+/* Show dropdown on hover */
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+/* Hero Section */
+.hero {
+  background: linear-gradient(to bottom right, #a5d6a7, #e8f5e9);
+  padding: 100px 20px;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 2.8rem;
+  margin-bottom: 20px;
+  color: #1b5e20;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: #2e7d32;
+}
+
+
+.report-box {
+  max-width: 600px;
+  margin: 60px auto;
+  padding: 30px;
+  background-color: #c8e6c9;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.report-box h2 {
+  font-size: 1.8rem;
+  color: #2e7d32;
+  margin-bottom: 10px;
+}
+
+.report-box p {
+  font-size: 1rem;
+  color: #2c5f2d;
+  margin-bottom: 20px;
+}
+
+.report-button {
+  background-color: #4caf50;
+  color: white;
+  padding: 12px 24px;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.report-button:hover {
+  background-color: #388e3c;
+}
+
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header>
+    <div class="nav-container">
+      <div class="logo">Bin It Right ♻</div>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Feed Section -->
+  <section class="feed-container">
+    <h2>Community Waste Reports</h2>
+
+    <div class="feed-post">
+      <img src="https://www.hindustantimes.com/ht-img/img/2025/04/08/550x309/Waste-dumped-on-a-sidewalk-due-to-jurisdictional-i_1744137344394.jpg" alt="Dumped waste" />
+      <div class="post-info">
+        <p><strong>Location:</strong> Near Market Street</p>
+        <p>Garbage piling up near footpath, attracting animals.</p>
+        <div class="vote-buttons">
+  <button class="vote red" onclick="exclusiveVote(this)">🔴 <span>0</span></button>
+  <button class="vote yellow" onclick="exclusiveVote(this)">🟡 <span>0</span></button>
+  <button class="vote green" onclick="exclusiveVote(this)">🟢 <span>0</span></button>
+</div>
+
+
+      </div>
+    </div>
+
+    <div class="feed-post">
+      <img src="https://th-i.thgim.com/public/incoming/h6g25u/article66927639.ece/alternates/FREE_1200/9870_1_6_2023_11_5_44_2_ER02CANAL2.JPG" alt="Waste dump" />
+      <div class="post-info">
+        <p><strong>Location:</strong> Canal Bridge</p>
+        <p>Plastic bottles and paper waste dumped in open.</p>
+       <div class="vote-buttons">
+  <button class="vote red" onclick="exclusiveVote(this)">🔴 <span>0</span></button>
+  <button class="vote yellow" onclick="exclusiveVote(this)">🟡 <span>0</span></button>
+  <button class="vote green" onclick="exclusiveVote(this)">🟢 <span>0</span></button>
+</div>
+
+
+      </div>
+    </div>
+
+  </section>
+<script>
+  function exclusiveVote(clickedBtn) {
+    const voteContainer = clickedBtn.parentElement;
+    const allButtons = voteContainer.querySelectorAll(".vote");
+
+    allButtons.forEach(btn => {
+      const countSpan = btn.querySelector("span");
+      let count = parseInt(countSpan.textContent);
+
+      if (btn === clickedBtn) {
+        if (btn.classList.contains("active")) {
+          // If clicking again, remove vote
+          btn.classList.remove("active");
+          countSpan.textContent = count - 1;
+        } else {
+          // Vote this one
+          btn.classList.add("active");
+          countSpan.textContent = count + 1;
+        }
+      } else if (btn.classList.contains("active")) {
+        // Remove previous vote
+        btn.classList.remove("active");
+        countSpan.textContent = count - 1;
+      }
+    });
+  }
+</script>
+
+<div class="report-footer">
+  <a href="report.html" class="report-link">➕ Submit a Report</a>
+</div>
+
+</body>
+</html>

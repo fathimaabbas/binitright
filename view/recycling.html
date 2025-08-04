@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sell Your Recyclable Waste</title>
+  <style>
+    body {
+  background-color: #e0f7e9;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background-color: #d4f1d7;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  width: 400px;
+}
+
+.container h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #1e4620;
+}
+
+form input, form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 15px;
+  border: 1px solid #b2dfdb;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+form textarea {
+  height: 80px;
+  resize: none;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #1b5e20;
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Sell Your Recyclable Waste</h2>
+    <form action="/submit-listing" method="POST">
+      <input type="text" name="wasteType" placeholder="e.g., Plastic bottles, Paper" required>
+
+      <textarea name="description" placeholder="Describe the condition or quantity" required></textarea>
+
+      <input type="number" name="expectedPrice" placeholder="Expected Price (₹)" required>
+
+      <input type="url" name="imageURL" placeholder="Paste image link or upload via admin" required>
+
+      <button type="submit">Submit Listing</button>
+    </form>
+  </div>
+</body>
+</html>

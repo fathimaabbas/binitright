@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Waste Classifier 🎥</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: url('https://wallpapers.com/images/hd/foggy-road-in-the-greenery-14nynhc1vprvdtz4.jpg') center/cover fixed;
+      color: #2e7d32;
+      text-align: center;
+    }
+    header {
+      background: rgba(255,255,255,0.8);
+      padding: 40px 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    header h1 {
+      margin: 0; font-size: 2.5rem; letter-spacing: 1px;
+    }
+    header p {
+      margin: 8px 0 0;
+      font-style: italic;
+      color: #444;
+    }
+    .container {
+      margin: 30px auto;
+      background: rgba(255,255,255,0.9);
+      max-width: 600px;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    video, img {
+      width: 100%;
+      max-height: 350px;
+      border-radius: 10px;
+      border: 2px solid #2e7d32;
+      object-fit: cover;
+    }
+    .buttons {
+      margin-top: 15px;
+    }
+    .buttons button {
+      margin: 5px;
+      padding: 10px 18px;
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .buttons button:hover {
+      background: #1b5e20;
+    }
+    .result {
+      margin: 20px 0;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    .nav {
+      margin-top: 20px;
+    }
+    .nav button {
+      margin: 5px;
+      padding: 8px 16px;
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .nav button:hover {
+      background: #1b5e20;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI Waste Classifier</h1>
+    <p>Scan an item, identify its type, and earn eco‐coins!</p>
+  </header>
+
+  <div class="container">
+    <video id="webcam" autoplay playsinline></video>
+    <img id="snapshot" style="display:none" />
+    <div class="buttons">
+      <button id="capture">📸 Capture Image</button>
+      <button id="predict">🔍 Identify Waste</button>
+      <button id="reset">🔄 Try Again</button>
+    </div>
+    <div class="result" id="result">No classification yet.</div>
+    <div class="nav">
+      <button onclick="location.href='eco-funzone.html'">← Back to Fun Zone</button>
+      <button onclick="location.href='index.html'">🏠 Home</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+  <script>
+    // ✅ Replace this with your Teachable Machine model URL
+    const URL = "https://teachablemachine.withgoogle.com/models/H0woQxq9O/";
+    let model, webcam, webcamEl, snapshotEl;
+
+    async function init() {
+      model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+
+      // Setup camera
+      webcam = new tmImage.Webcam(400, 300, true);
+      await webcam.setup();
+      await webcam.play();
+
+      webcamEl = document.getElementById("webcam");
+      snapshotEl = document.getElementById("snapshot");
+
+      // Stream camera
+      document.getElementById("webcam").srcObject = webcam.canvas.captureStream();
+      window.requestAnimationFrame(loop);
+    }
+
+    function loop() {
+      webcam.update();
+      window.requestAnimationFrame(loop);
+    }
+
+    init();
+
+    document.getElementById("capture").addEventListener("click", () => {
+      snapshotEl.src = webcam.canvas.toDataURL();
+      snapshotEl.style.display = "block";
+      webcamEl.style.display = "none";
+      document.getElementById("result").innerText = "Ready to identify...";
+    });
+
+    document.getElementById("predict").addEventListener("click", async () => {
+      const img = snapshotEl;
+      if (!img.src) return alert("📷 Please capture a photo first.");
+      const prediction = await model.predict(img);
+      const top = prediction.sort((a, b) => b.probability - a.probability)[0];
+
+      document.getElementById("result").innerText = 
+        🧩 Detected: ${top.className} — ${(top.probability*100).toFixed(1)}%;
+
+      if (top.probability > 0.80) {
+        alert("🎉 Great job! You've earned 10 eco-coins!");
+        // You could call updateCoins(10);
+      }
+    });
+
+    document.getElementById("reset").addEventListener("click", () => {
+      snapshotEl.style.display = "none";
+      webcamEl.style.display = "block";
+      document.getElementById("result").innerText = "No classification yet.";
+    });
+  </script>
+</body>
+</html>
