@@ -144,3 +144,36 @@ header {
 .report-button:hover {
   background-color: #388e3c;
 }
+.form-container
+{
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  margin: 10rem auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color:  #c8e6c9;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  color: #2e7d32;
+  
+}
+form input 
+{
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+button
+{
+  background-color:#388e3c;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  color: white;
+}
