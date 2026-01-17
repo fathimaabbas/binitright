@@ -263,41 +263,45 @@ header {
   </header>
 
   <!-- Feed Section -->
-  <section class="feed-container">
+  <section class="feed-container" id="feed-container">
     <h2>Community Waste Reports</h2>
-
-    <div class="feed-post">
-      <img src="https://www.hindustantimes.com/ht-img/img/2025/04/08/550x309/Waste-dumped-on-a-sidewalk-due-to-jurisdictional-i_1744137344394.jpg" alt="Dumped waste" />
-      <div class="post-info">
-        <p><strong>Location:</strong> Near Market Street</p>
-        <p>Garbage piling up near footpath, attracting animals.</p>
-        <div class="vote-buttons">
-  <button class="vote red" onclick="exclusiveVote(this)">🔴 <span>0</span></button>
-  <button class="vote yellow" onclick="exclusiveVote(this)">🟡 <span>0</span></button>
-  <button class="vote green" onclick="exclusiveVote(this)">🟢 <span>0</span></button>
-</div>
-
-
-      </div>
-    </div>
-
-    <div class="feed-post">
-      <img src="https://th-i.thgim.com/public/incoming/h6g25u/article66927639.ece/alternates/FREE_1200/9870_1_6_2023_11_5_44_2_ER02CANAL2.JPG" alt="Waste dump" />
-      <div class="post-info">
-        <p><strong>Location:</strong> Canal Bridge</p>
-        <p>Plastic bottles and paper waste dumped in open.</p>
-       <div class="vote-buttons">
-  <button class="vote red" onclick="exclusiveVote(this)">🔴 <span>0</span></button>
-  <button class="vote yellow" onclick="exclusiveVote(this)">🟡 <span>0</span></button>
-  <button class="vote green" onclick="exclusiveVote(this)">🟢 <span>0</span></button>
-</div>
-
-
-      </div>
-    </div>
-
+    <!-- Reports will be loaded here -->
   </section>
+
 <script>
+  async function loadReports() {
+    try {
+      const response = await fetch('/api/reports');
+      const reports = await response.json();
+      const container = document.getElementById('feed-container');
+      
+      // Clear existing hardcoded posts except heading
+      container.innerHTML = '<h2>Community Waste Reports</h2>';
+
+      reports.forEach(report => {
+        const post = document.createElement('div');
+        post.className = 'feed-post';
+        post.innerHTML = `
+          <img src="${report.photo_path}" alt="Dumped waste" />
+          <div class="post-info">
+            <p><strong>Location:</strong> ${report.location}</p>
+            <p>${report.description}</p>
+            <div class="vote-buttons">
+              <button class="vote red" onclick="exclusiveVote(this)">🔴 <span>0</span></button>
+              <button class="vote yellow" onclick="exclusiveVote(this)">🟡 <span>0</span></button>
+              <button class="vote green" onclick="exclusiveVote(this)">🟢 <span>0</span></button>
+            </div>
+          </div>
+        `;
+        container.appendChild(post);
+      });
+    } catch (err) {
+      console.error('Error loading reports:', err);
+    }
+  }
+
+  window.onload = loadReports;
+
   function exclusiveVote(clickedBtn) {
     const voteContainer = clickedBtn.parentElement;
     const allButtons = voteContainer.querySelectorAll(".vote");
