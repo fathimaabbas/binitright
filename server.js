@@ -24,20 +24,22 @@ const app = express();
  ************************************/
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static('view'));
+
+// Serve all static files from 'view' folder at root URL
+app.use(express.static(path.join(__dirname, 'view')));
 
 /************************************
  * MULTER CONFIGURATION
  ************************************/
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'view/uploads/');
+        cb(null, path.join(__dirname, 'view', 'uploads'));
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + path.extname(file.originalname));
     }
 });
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
 /************************************
  * DATABASE CONNECTION
@@ -67,6 +69,17 @@ const initDb = async () => {
                 photo_path VARCHAR(255) NOT NULL,
                 location VARCHAR(255) NOT NULL,
                 description TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS recycling_requests (
+                id SERIAL PRIMARY KEY,
+                waste_type VARCHAR(255) NOT NULL,
+                description TEXT NOT NULL,
+                expected_price NUMERIC(10,2) NOT NULL,
+                image_url TEXT NOT NULL,
+                status VARCHAR(50) DEFAULT 'Pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
@@ -103,22 +116,17 @@ function verifyToken(req, res, next) {
  ************************************/
 app.post('/register', async (req, res) => {
     const { email, password, confirm_password, role } = req.body;
-
     if (!email || !password || !confirm_password || !role)
         return res.status(400).send('All fields required');
-
     if (password !== confirm_password)
         return res.status(400).send('Passwords do not match');
-
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-
         await pool.query(
             'INSERT INTO users (email, password, role) VALUES ($1, $2, $3)',
             [email, hashedPassword, role]
         );
-
-        res.redirect('/login');
+        res.redirect('/login.html');
     } catch (err) {
         if (err.code === '23505')
             res.status(400).send('Email already exists');
@@ -132,48 +140,28 @@ app.post('/register', async (req, res) => {
  ************************************/
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-
-    if (!email || !password)
-        return res.status(400).send('All fields required');
-
+    if (!email || !password) return res.status(400).send('All fields required');
     try {
-        const result = await pool.query(
-            'SELECT * FROM users WHERE email = $1',
-            [email]
-        );
-
-        if (result.rows.length === 0)
-            return res.status(401).send('Invalid email or password');
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) return res.status(401).send('Invalid email or password');
 
         const user = result.rows[0];
         const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(401).send('Invalid email or password');
 
-        if (!isMatch)
-            return res.status(401).send('Invalid email or password');
-
-        const token = jwt.sign(
-            { id: user.id, role: user.role },
-            JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
-        res.json({ message: 'Login successful', token });
-
+        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
+        res.json({ message: 'Login successful', token, role: user.role });
     } catch {
         res.status(500).send('Server error');
     }
 });
 
 /************************************
- * 🔐 PROFILE API (NEW)
+ * PROFILE API
  ************************************/
 app.get('/profile', verifyToken, async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT email, role FROM users WHERE id = $1',
-            [req.user.id]
-        );
-
+        const result = await pool.query('SELECT email, role FROM users WHERE id = $1', [req.user.id]);
         res.json(result.rows[0]);
     } catch {
         res.status(500).json({ message: 'Error fetching profile' });
@@ -186,10 +174,7 @@ app.get('/profile', verifyToken, async (req, res) => {
 app.post('/submit-report', upload.single('photo'), async (req, res) => {
     const { location, description } = req.body;
     const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
-
-    if (!location || !description || !photoPath) {
-        return res.status(400).send('All fields and photo are required');
-    }
+    if (!location || !description || !photoPath) return res.status(400).send('All fields and photo are required');
 
     try {
         await pool.query(
@@ -203,6 +188,43 @@ app.post('/submit-report', upload.single('photo'), async (req, res) => {
     }
 });
 
+/************************************
+ * SUBMIT RECYCLING LIST
+ ************************************/
+app.post("/submit-listing", async (req, res) => {
+    const { wasteType, description, expectedPrice, imageURL } = req.body;
+    if (!wasteType || !description || !expectedPrice || !imageURL)
+        return res.status(400).send("All fields are required");
+
+    try {
+        await pool.query(
+            `INSERT INTO recycling_requests (waste_type, description, expected_price, image_url) 
+            VALUES ($1, $2, $3, $4)`,
+            [wasteType, description, expectedPrice, imageURL]
+        );
+        res.redirect("/recycling.html?success=true");
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Server error while submitting recycling request");
+    }
+});
+
+/************************************
+ * GET RECYCLING LISTINGS
+ ************************************/
+app.get("/api/recycling", async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM recycling_requests ORDER BY created_at DESC");
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error fetching recycling requests" });
+    }
+});
+
+/************************************
+ * GET REPORTS
+ ************************************/
 app.get('/api/reports', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM reports ORDER BY created_at DESC');
@@ -216,17 +238,11 @@ app.get('/api/reports', async (req, res) => {
 /************************************
  * PAGE ROUTES
  ************************************/
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'view', 'index.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'view', 'login.html'));
-});
-
-app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'view', 'register.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'view', 'index.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'view', 'login.html')));
+app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'view', 'register.html')));
+app.get('/recycling', (req, res) => res.sendFile(path.join(__dirname, 'view', 'recycling.html')));
+app.get('/feed', (req, res) => res.sendFile(path.join(__dirname, 'view', 'feed.html')));
 
 /************************************
  * START SERVER
