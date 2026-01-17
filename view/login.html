@@ -14,37 +14,44 @@
         </form>
     </div>
 
-    <script>
-    async function loginUser(event) {
-        event.preventDefault(); // ⛔ prevent form reload
+   <script>
+async function loginUser(event) {
+    event.preventDefault();
 
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-        try {
-            const response = await fetch("/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
-            });
+    try {
+        const response = await fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (response.ok) {
-                // ✅ STORE TOKEN & EMAIL
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("email", email);
+        if (response.ok) {
+            // Store token & role
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("email", email);
+            localStorage.setItem("role", data.role);
 
-                // ✅ REDIRECT TO INDEX
-                window.location.href = "index.html"; // change if needed
+            // 🔀 ROLE BASED REDIRECT
+            if (data.role === "official") {
+                window.location.href = "official/dashboard.html";
             } else {
-                alert(data.message || "Login failed");
+                window.location.href = "index.html";
             }
-        } catch (err) {
-            console.error(err);
-            alert("Server error. Please try again.");
+
+        } else {
+            alert(data.message || "Login failed");
         }
+    } catch (err) {
+        console.error(err);
+        alert("Server error. Please try again.");
     }
-    </script>
+}
+</script>
+
 </body>
 </html>
