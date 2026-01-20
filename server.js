@@ -1,39 +1,37 @@
 /************************************
- * LOAD ENVIRONMENT VARIABLES
+ * LOAD ENV VARIABLES
  ************************************/
 require('dotenv').config();
 
 /************************************
- * IMPORT REQUIRED MODULES
+ * IMPORT MODULES
  ************************************/
 const express = require('express');
+const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const path = require('path');
 const multer = require('multer');
 
 /************************************
- * INITIALIZE EXPRESS APP
+ * INIT APP
  ************************************/
 const app = express();
 
 /************************************
- * MIDDLEWARE CONFIGURATION
+ * MIDDLEWARE
  ************************************/
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
-// Serve all static files from 'view' folder at root URL
 app.use(express.static(path.join(__dirname, 'view')));
 
 /************************************
- * MULTER CONFIGURATION
+ * MULTER CONFIG
  ************************************/
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'view', 'uploads'));
+        cb(null, path.join(__dirname, 'view/uploads'));
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + path.extname(file.originalname));
@@ -42,7 +40,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 /************************************
- * DATABASE CONNECTION
+ * DATABASE CONFIG
  ************************************/
 const pool = new Pool({
     user: process.env.DB_USER,
@@ -52,202 +50,170 @@ const pool = new Pool({
     port: process.env.DB_PORT
 });
 
-// Create tables if they don't exist
-const initDb = async () => {
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                role VARCHAR(50) NOT NULL
-            );
-        `);
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS reports (
-                id SERIAL PRIMARY KEY,
-                photo_path VARCHAR(255) NOT NULL,
-                location VARCHAR(255) NOT NULL,
-                description TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS recycling_requests (
-                id SERIAL PRIMARY KEY,
-                waste_type VARCHAR(255) NOT NULL,
-                description TEXT NOT NULL,
-                expected_price NUMERIC(10,2) NOT NULL,
-                image_url TEXT NOT NULL,
-                status VARCHAR(50) DEFAULT 'Pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-        console.log("Database initialized");
-    } catch (err) {
-        console.error("Error initializing database", err);
-    }
-};
+/************************************
+ * INIT DATABASE
+ ************************************/
+async function initDb() {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            role VARCHAR(50) NOT NULL
+        );
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS recycling_requests (
+            id SERIAL PRIMARY KEY,
+            customer_name VARCHAR(255),
+            contact_number VARCHAR(20),
+            location TEXT,
+            waste_type VARCHAR(255) NOT NULL,
+            description TEXT NOT NULL,
+            expected_price NUMERIC(10,2) NOT NULL,
+            image_url TEXT NOT NULL,
+            status VARCHAR(50) DEFAULT 'Pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    `);
+
+    console.log("Database initialized");
+}
 initDb();
 
 /************************************
- * JWT CONFIG
- ************************************/
-const JWT_SECRET = process.env.JWT_SECRET;
-
-/************************************
- * JWT AUTH MIDDLEWARE
- ************************************/
-function verifyToken(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(403).json({ message: 'Token required' });
-
-    const token = authHeader.split(' ')[1];
-
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) return res.status(401).json({ message: 'Invalid token' });
-        req.user = decoded;
-        next();
-    });
-}
-
-/************************************
- * REGISTER API
+ * AUTH APIs
  ************************************/
 app.post('/register', async (req, res) => {
     const { email, password, confirm_password, role } = req.body;
-    if (!email || !password || !confirm_password || !role)
-        return res.status(400).send('All fields required');
-    if (password !== confirm_password)
-        return res.status(400).send('Passwords do not match');
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await pool.query(
-            'INSERT INTO users (email, password, role) VALUES ($1, $2, $3)',
-            [email, hashedPassword, role]
-        );
-        res.redirect('/login.html');
-    } catch (err) {
-        if (err.code === '23505')
-            res.status(400).send('Email already exists');
-        else
-            res.status(500).send('Server error');
-    }
+    if (password !== confirm_password) return res.send("Passwords mismatch");
+
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query(
+        "INSERT INTO users (email, password, role) VALUES ($1,$2,$3)",
+        [email, hash, role]
+    );
+    res.redirect('/login.html');
 });
 
-/************************************
- * LOGIN API
- ************************************/
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).send('All fields required');
-    try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (result.rows.length === 0) return res.status(401).send('Invalid email or password');
+    const result = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
+    if (result.rows.length === 0) return res.send("Invalid login");
 
-        const user = result.rows[0];
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(401).send('Invalid email or password');
+    const user = result.rows[0];
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.send("Invalid login");
 
-        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
-        res.json({ message: 'Login successful', token, role: user.role });
-    } catch {
-        res.status(500).send('Server error');
-    }
+    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET);
+    res.json({ token, role: user.role });
 });
 
 /************************************
- * PROFILE API
+ * SUBMIT RECYCLING LISTING
  ************************************/
-app.get('/profile', verifyToken, async (req, res) => {
-    try {
-        const result = await pool.query('SELECT email, role FROM users WHERE id = $1', [req.user.id]);
-        res.json(result.rows[0]);
-    } catch {
-        res.status(500).json({ message: 'Error fetching profile' });
-    }
+app.post('/submit-listing', upload.single('image'), async (req, res) => {
+    const {
+        customerName,
+        contactNumber,
+        location,
+        wasteType,
+        description,
+        expectedPrice
+    } = req.body;
+
+    const imagePath = `/uploads/${req.file.filename}`;
+
+    await pool.query(
+        `INSERT INTO recycling_requests
+        (customer_name, contact_number, location, waste_type, description, expected_price, image_url)
+        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [
+            customerName || "Anonymous",
+            contactNumber,
+            location,
+            wasteType,
+            description,
+            expectedPrice,
+            imagePath
+        ]
+    );
+
+    res.redirect('/recycling.html?success=true');
 });
 
 /************************************
- * REPORT API
+ * GET ALL RECYCLING REQUESTS
  ************************************/
-app.post('/submit-report', upload.single('photo'), async (req, res) => {
-    const { location, description } = req.body;
-    const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
-    if (!location || !description || !photoPath) return res.status(400).send('All fields and photo are required');
+app.get('/api/recycling', async (req, res) => {
+    const result = await pool.query(
+        "SELECT * FROM recycling_requests ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+});
 
+/************************************
+ * ACCEPT REQUEST
+ ************************************/
+app.post('/api/recycling/:id/accept', async (req, res) => {
+    await pool.query(
+        "UPDATE recycling_requests SET status='Accepted' WHERE id=$1",
+        [req.params.id]
+    );
+    res.json({ message: "Request accepted" });
+});
+
+/************************************
+ * MARK COLLECTED
+ ************************************/
+app.post('/api/recycling/:id/collect', async (req, res) => {
+    await pool.query(
+        "UPDATE recycling_requests SET status='Collected' WHERE id=$1",
+        [req.params.id]
+    );
+    res.json({ message: "Collected" });
+});
+/************************************
+ * DELETE COLLECTED REQUEST
+ ************************************/
+app.delete('/api/recycling/:id', async (req, res) => {
     try {
-        await pool.query(
-            'INSERT INTO reports (photo_path, location, description) VALUES ($1, $2, $3)',
-            [photoPath, location, description]
+        // Only delete if already collected
+        const result = await pool.query(
+            "DELETE FROM recycling_requests WHERE id = $1 AND status = 'Collected' RETURNING *",
+            [req.params.id]
         );
-        res.redirect('/feed.html');
+
+        if (result.rowCount === 0) {
+            return res.status(400).json({ message: "Only collected items can be deleted" });
+        }
+
+        res.json({ message: "Collected request deleted" });
     } catch (err) {
         console.error(err);
-        res.status(500).send('Server error');
-    }
-});
-
-/************************************
- * SUBMIT RECYCLING LIST
- ************************************/
-app.post("/submit-listing", async (req, res) => {
-    const { wasteType, description, expectedPrice, imageURL } = req.body;
-    if (!wasteType || !description || !expectedPrice || !imageURL)
-        return res.status(400).send("All fields are required");
-
-    try {
-        await pool.query(
-            `INSERT INTO recycling_requests (waste_type, description, expected_price, image_url) 
-            VALUES ($1, $2, $3, $4)`,
-            [wasteType, description, expectedPrice, imageURL]
-        );
-        res.redirect("/recycling.html?success=true");
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Server error while submitting recycling request");
-    }
-});
-
-/************************************
- * GET RECYCLING LISTINGS
- ************************************/
-app.get("/api/recycling", async (req, res) => {
-    try {
-        const result = await pool.query("SELECT * FROM recycling_requests ORDER BY created_at DESC");
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Error fetching recycling requests" });
-    }
-});
-
-/************************************
- * GET REPORTS
- ************************************/
-app.get('/api/reports', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM reports ORDER BY created_at DESC');
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error fetching reports' });
+        res.status(500).json({ message: "Server error while deleting" });
     }
 });
 
 /************************************
  * PAGE ROUTES
  ************************************/
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'view', 'index.html')));
-app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'view', 'login.html')));
-app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'view', 'register.html')));
-app.get('/recycling', (req, res) => res.sendFile(path.join(__dirname, 'view', 'recycling.html')));
-app.get('/feed', (req, res) => res.sendFile(path.join(__dirname, 'view', 'feed.html')));
+app.get('/', (req, res) =>
+    res.sendFile(path.join(__dirname, 'view/index.html'))
+);
+
+app.get('/recycling', (req, res) =>
+    res.sendFile(path.join(__dirname, 'view/recycling.html'))
+);
+
+app.get('/official-dashboard', (req, res) =>
+    res.sendFile(path.join(__dirname, 'view/official-dashboard.html'))
+);
 
 /************************************
  * START SERVER
  ************************************/
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+app.listen(3000, () =>
+    console.log("Server running on http://localhost:3000")
+);

@@ -14,9 +14,20 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.16.3"
-  }
+    "multer": "^2.0.2",
+    "pg": "^8.17.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fathimaabbas/binitright.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fathimaabbas/binitright/issues"
+  },
+  "homepage": "https://github.com/fathimaabbas/binitright#readme"
 }
