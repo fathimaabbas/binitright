@@ -120,39 +120,54 @@ The model is trained using an image dataset containing two classes:
 
 ## 📁 Project Folder Structure
 
-BINITRIGHT/
+binitright/
 │
-├── dataset/
-│ └── Waste Classification Dataset/dataset/
-│ ├── organic/
-│ └── recyclable/
-│
-├── data/
-│ ├── train/
-│ └── val/
+├── server.js                  # Main Express server
+├── predict.py                 # AI inference script (Organic / Recyclable)
+├── train.py                   # Model training script
+├── waste_model.h5             # Trained CNN model
+├── package.json
+├── package-lock.json
+├── .gitignore
+├── .env                       # Environment variables (ignored in git)
 │
 ├── view/
-│ ├── official/
-│ ├── uploads/
-│ ├── classify.html
-│ ├── index.html
-│ ├── recycling.html
-│ ├── report.html
-│ └── *.html
+│   │
+│   ├── uploads/               # Uploaded & captured images
+│   │   ├── 1768832274707.webp
+│   │   ├── 1768832379108.webp
+│   │   └── 1768918561202.jpg
+│   │
+│   ├── index.html              # Landing page
+│   ├── login.html              # Login page
+│   ├── register.html           # Registration page
+│   ├── classify.html           # Camera-based waste classification
+│   ├── recycling.html          # Sell recyclable waste
+│   ├── report.html             # Report waste dumping
+│   ├── feed.html               # Awareness feed
+│   ├── eco-funzone.html        # Eco learning hub
+│   ├── funzone.html            # Games hub
+│   ├── quizGame.html           # Quiz game
+│   ├── memoryGame.html         # Memory game
+│   ├── binGame.html            # Waste sorting game
+│   ├── payment.html            # Payment page
+│   │
+│   ├── official/
+│   │   └── dashboard.html      # Official / Admin dashboard
+│   │
+│   └── style.css               # Global styles
 │
-├── uploads/
+├── dataset/                    # Training dataset
+│   │
+│   └── data/
+│       ├── train/
+│       │   ├── organic/
+│       │   └── recyclable/
+│       │
+│       └── val/
+│           ├── organic/
+│           └── recyclable/
 │
-├── train_model.py
-├── predict.py
-├── split_dataset.py
-├── prepare_dataset.py
-├── test_image.py
-├── waste_model.h5
-│
-├── server.js
-├── package.json
-├── .gitignore
-├── .env
 └── README.md
 
 
