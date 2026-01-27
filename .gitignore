@@ -1,2 +1,27 @@
-.env
+# Node
 node_modules/
+
+# Environment variables
+.env
+
+# Uploads
+uploads/
+view/uploads/
+
+# Datasets
+dataset/
+data/
+Waste Classification Dataset/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / Editor
+.DS_Store
+.vscode/
+.zenflow/
+.zencoder/

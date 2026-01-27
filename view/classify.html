@@ -1,92 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smart Waste Capture</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f0fdf4;
-      color: #2e7d32;
-      text-align: center;
-      padding: 30px;
-    }
+    <meta charset="UTF-8">
+    <title>Waste Classification | Bin It Right</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    h1 {
-      margin-bottom: 10px;
-    }
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background: #e8f5e9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
-    video, canvas {
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      margin-top: 20px;
-    }
+        .card {
+            background: white;
+            padding: 20px;
+            width: 360px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            text-align: center;
+        }
 
-    button {
-      background-color: #2e7d32;
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      font-size: 16px;
-      border-radius: 30px;
-      cursor: pointer;
-      margin-top: 20px;
-    }
+        h2 {
+            margin-bottom: 10px;
+            color: #2e7d32;
+        }
 
-    button:hover {
-      background-color: #1b5e20;
-    }
+        video, canvas {
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
 
-    .image-container {
-      margin-top: 30px;
-    }
+        button {
+            margin-top: 14px;
+            padding: 12px;
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            background: #43a047;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
 
-    #captured-image {
-      display: none;
-      margin-top: 20px;
-      border-radius: 15px;
-      max-width: 90%;
-    }
-  </style>
+        button:hover {
+            background: #2e7d32;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            background: #f1f8e9;
+            display: none;
+        }
+
+        .label {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1b5e20;
+        }
+
+        .confidence {
+            margin-top: 5px;
+            color: #555;
+        }
+    </style>
 </head>
 <body>
 
-  <h1>📷 Capture Waste Image</h1>
-  <p>Use your camera to click a photo of the waste item.</p>
+<div class="card">
+    <h2>♻️ Waste Classifier</h2>
 
-  <video id="camera" width="320" height="240" autoplay></video>
-  <br>
-  <button onclick="capture()">📸 Capture</button>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" style="display:none;"></canvas>
 
-  <div class="image-container">
-    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
-    <img id="captured-image" alt="Captured waste image"/>
-  </div>
+    <button onclick="captureAndPredict()">📸 Capture & Predict</button>
 
-  <script>
-    const video = document.getElementById('camera');
-    const canvas = document.getElementById('canvas');
-    const img = document.getElementById('captured-image');
-    const context = canvas.getContext('2d');
+    <div class="result" id="resultBox">
+        <div class="label" id="label"></div>
+        <div class="confidence" id="confidence"></div>
+    </div>
+</div>
 
-    // Access camera
+<script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const resultBox = document.getElementById("resultBox");
+    const labelEl = document.getElementById("label");
+    const confidenceEl = document.getElementById("confidence");
+
+    // 🎥 Start Camera
     navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(error => {
-        alert("Camera access denied or not supported.");
-        console.error(error);
-      });
+        .then(stream => video.srcObject = stream)
+        .catch(() => alert("❌ Camera access denied"));
 
-    function capture() {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = canvas.toDataURL('image/png');
-      img.src = imageData;
-      img.style.display = 'block';
+    function captureAndPredict() {
+        const ctx = canvas.getContext("2d");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append("image", blob, "capture.jpg");
+
+            fetch("/api/classify-waste", {
+                method: "POST",
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    resultBox.style.display = "block";
+                    labelEl.innerText = data.prediction;
+                    confidenceEl.innerText =
+                        "Confidence: " + (data.confidence * 100).toFixed(2) + "%";
+                } else {
+                    alert("❌ Prediction failed");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("❌ Server error");
+            });
+
+        }, "image/jpeg");
     }
-  </script>
+</script>
 
 </body>
 </html>

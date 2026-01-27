@@ -13,6 +13,8 @@ const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
 const path = require('path');
 const multer = require('multer');
+const cors = require('cors');
+const { exec } = require('child_process');
 
 /************************************
  * INIT APP
@@ -22,12 +24,13 @@ const app = express();
 /************************************
  * MIDDLEWARE
  ************************************/
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'view')));
 
 /************************************
- * MULTER CONFIG
+ * MULTER CONFIG (UPLOADS)
  ************************************/
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -69,16 +72,16 @@ async function initDb() {
             customer_name VARCHAR(255),
             contact_number VARCHAR(20),
             location TEXT,
-            waste_type VARCHAR(255) NOT NULL,
-            description TEXT NOT NULL,
-            expected_price NUMERIC(10,2) NOT NULL,
-            image_url TEXT NOT NULL,
+            waste_type VARCHAR(255),
+            description TEXT,
+            expected_price NUMERIC(10,2),
+            image_url TEXT,
             status VARCHAR(50) DEFAULT 'Pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `);
 
-    console.log("Database initialized");
+    console.log("✅ Database initialized");
 }
 initDb();
 
@@ -87,7 +90,9 @@ initDb();
  ************************************/
 app.post('/register', async (req, res) => {
     const { email, password, confirm_password, role } = req.body;
-    if (password !== confirm_password) return res.send("Passwords mismatch");
+    if (password !== confirm_password) {
+        return res.send("Passwords mismatch");
+    }
 
     const hash = await bcrypt.hash(password, 10);
     await pool.query(
@@ -100,13 +105,23 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const result = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
-    if (result.rows.length === 0) return res.send("Invalid login");
+
+    if (result.rows.length === 0) {
+        return res.send("Invalid login");
+    }
 
     const user = result.rows[0];
     const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.send("Invalid login");
 
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET);
+    if (!ok) {
+        return res.send("Invalid login");
+    }
+
+    const token = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.JWT_SECRET
+    );
+
     res.json({ token, role: user.role });
 });
 
@@ -174,27 +189,55 @@ app.post('/api/recycling/:id/collect', async (req, res) => {
     );
     res.json({ message: "Collected" });
 });
+
 /************************************
  * DELETE COLLECTED REQUEST
  ************************************/
 app.delete('/api/recycling/:id', async (req, res) => {
-    try {
-        // Only delete if already collected
-        const result = await pool.query(
-            "DELETE FROM recycling_requests WHERE id = $1 AND status = 'Collected' RETURNING *",
-            [req.params.id]
-        );
+    const result = await pool.query(
+        "DELETE FROM recycling_requests WHERE id=$1 AND status='Collected' RETURNING *",
+        [req.params.id]
+    );
 
-        if (result.rowCount === 0) {
-            return res.status(400).json({ message: "Only collected items can be deleted" });
+    if (result.rowCount === 0) {
+        return res.status(400).json({ message: "Only collected items can be deleted" });
+    }
+
+    res.json({ message: "Collected request deleted" });
+});
+
+/************************************
+ * 🧠 WASTE IMAGE CLASSIFICATION API
+ ************************************/
+app.post('/api/classify-waste', upload.single('image'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, error: "No image uploaded" });
+    }
+
+    const imagePath = path.join(__dirname, 'view/uploads', req.file.filename);
+
+    exec(`python predict.py "${imagePath}"`, (error, stdout, stderr) => {
+        if (error) {
+            console.error("Python error:", error);
+            return res.status(500).json({ success: false, error: "Prediction failed" });
         }
 
-        res.json({ message: "Collected request deleted" });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Server error while deleting" });
-    }
+        try {
+            const result = JSON.parse(stdout.trim());
+
+            res.json({
+                success: true,
+                prediction: result.label,
+                confidence: result.confidence
+            });
+
+        } catch (err) {
+            console.error("JSON parse error:", stdout);
+            res.status(500).json({ success: false, error: "Invalid model output" });
+        }
+    });
 });
+
 
 /************************************
  * PAGE ROUTES
@@ -210,10 +253,13 @@ app.get('/recycling', (req, res) =>
 app.get('/official-dashboard', (req, res) =>
     res.sendFile(path.join(__dirname, 'view/official-dashboard.html'))
 );
+app.get('/classify', (req, res) =>
+    res.sendFile(path.join(__dirname, 'view/classify.html'))
+);
 
 /************************************
  * START SERVER
  ************************************/
-app.listen(3000, () =>
-    console.log("Server running on http://localhost:3000")
-);
+app.listen(3000, () => {
+    console.log("🚀 Server running on http://localhost:3000");
+});
