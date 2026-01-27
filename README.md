@@ -1,6 +1,8 @@
 # ♻️ Bin It Right
 
-**Bin It Right** is a web-based waste management and environmental awareness platform designed to promote proper waste disposal, recycling, and eco-conscious behavior. The project combines **user participation**, **official/admin monitoring**, **image-based waste handling**, and **gamified learning** into a single system.
+**Bin It Right** is an AI-powered web-based waste management and environmental awareness platform that promotes proper waste segregation, recycling, and eco-conscious behavior.
+
+The system integrates **image-based waste classification**, **user participation**, **official/admin monitoring**, and **gamified learning** into a single scalable platform.
 
 This project is suitable for **college submissions**, **hackathons**, and **portfolio demonstrations**.
 
@@ -8,151 +10,189 @@ This project is suitable for **college submissions**, **hackathons**, and **port
 
 ## 🌍 Problem Statement
 
-Improper waste segregation and lack of awareness about recycling lead to environmental damage and inefficient waste management systems. Bin It Right addresses this by:
+Improper waste segregation and lack of awareness about recyclable materials lead to environmental pollution and inefficient waste management systems.
 
-* Encouraging users to recycle and sell waste responsibly
-* Providing visual proof through image uploads
-* Educating users using interactive eco-games and quizzes
-* Allowing officials/admins to monitor submissions
+**Bin It Right** addresses this problem by:
+- Encouraging responsible waste disposal and recycling
+- Using **AI image classification** to identify waste type
+- Collecting visual proof through image uploads
+- Educating users via interactive games and quizzes
+- Enabling officials/admins to monitor and verify submissions
 
 ---
 
 ## ✨ Features
 
 ### 👤 User Features
-
-* User Registration & Login
-* Submit recyclable waste details
-* Upload images of recyclable items
-* Submit reports regarding dumping wastes
-* View reports submitted by the users
-* Take immediate action in removing waste in public places
-* View eco-awareness pages
-* Participate in games and quizzes
+- User Registration & Login
+- Camera-based waste image capture
+- **AI-based waste classification (Organic / Recyclable)**
+- Submit recyclable waste listings
+- Upload image proof
+- Report illegal waste dumping
+- Access eco-awareness content
+- Play educational games and quizzes
 
 ### 🏛️ Official / Admin Features
+- Secure official dashboard
+- View recyclable waste submissions
+- View uploaded images
+- Accept and mark waste as collected
+- Delete verified records
 
-* Secure official dashboard
-* View submitted recyclable listings
-* View uploaded images from users
-* Delete collected / verified entries
+### 🧠 AI & Intelligence
+- CNN-based image classification
+- Real-time prediction using trained model
+- Python-based inference pipeline
+- Backend-integrated AI API
 
-### 🧠 Awareness & Gamification
+### 🎮 Awareness & Gamification
+- Eco Fun Zone
+- Recycling awareness pages
+- Quiz Game
+- Memory Game
+- Bin Sorting Game
 
-* Eco Fun Zone
-* Recycling awareness pages
-* Quiz Game
-* Memory Game
-* Bin Game
+---
+
+## 🧠 AI Waste Classification
+
+### 🔍 Supported Classes
+- **Organic Waste**
+- **Recyclable Waste**
+
+### 📸 Input
+- Camera-captured images from browser
+- Uploaded waste images
+
+### 📊 Output
+- Predicted waste category
+- Confidence score (percentage)
+
+---
+
+## 🧪 Model Training Process
+
+### 📂 Dataset
+The model is trained using an image dataset containing two classes:
+
+
+### 🔄 Preprocessing
+- Images resized to **128 × 128**
+- Pixel values normalized (0–1)
+- Train / validation split applied
+
+### 🧠 Model Architecture
+- Convolutional Neural Network (CNN)
+- Conv2D + MaxPooling layers
+- Dense fully connected layers
+- Sigmoid activation for binary classification
+
+### 💾 Model Output
+- Trained model saved as `waste_model.h5`
+
+---
+
+## 🔮 Real-Time Prediction Workflow
+
+1. User captures image using camera
+2. Image is sent to backend using `fetch()`
+3. Node.js stores image via Multer
+4. Python script (`predict.py`) is executed
+5. Trained model predicts waste type
+6. Prediction result is returned as JSON
+7. UI displays label and confidence
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer          | Technology                       |
-| -------------- | -------------------------------- |
-| Frontend       | HTML, CSS (Segoe UI)             |
-| Backend        | Node.js, Express.js              |
-| Database       | MongoDB / MySQL (based on setup) |
-| File Uploads   | Multer                           |
-| Authentication | Sessions / Cookies               |
-| Styling        | Custom CSS                       |
+| Layer           | Technology                    |
+|-----------------|-------------------------------|
+| Frontend        | HTML, CSS (Segoe UI), JS      |
+| Backend         | Node.js, Express.js           |
+| AI / ML         | Python, TensorFlow, Keras     |
+| Database        | PostgreSQL / MongoDB          |
+| File Uploads    | Multer                        |
+| Authentication  | JWT / Sessions                |
 
 ---
 
 ## 📁 Project Folder Structure
 
-```
-view/
+BINITRIGHT/
 │
-├── official/
-│   └── dashboard.html        # Admin dashboard
+├── dataset/
+│ └── Waste Classification Dataset/dataset/
+│ ├── organic/
+│ └── recyclable/
 │
-├── uploads/                  # User uploaded images
-│   ├── 1768832274707.webp
-│   ├── 1768832379108.webp
-│   ├── 1768916942841.png
-│   └── 1768918561202.jpg
+├── data/
+│ ├── train/
+│ └── val/
 │
-├── binGame.html               # Waste sorting game
-├── classify.html              # Waste classification page
-├── eco-funzone.html           # Eco fun activities
-├── feed.html                  # User feed / awareness
-├── funzone.html               # Games hub
-├── index.html                 # Landing page
-├── login.html                 # Login page
-├── memoryGame.html            # Memory game
-├── payment.html               # Payment page
-├── quizGame.html              # Quiz game
-├── recycling.html             # Sell recyclables page
-├── register.html              # Registration page
-├── report.html                # Report / complaint page
+├── view/
+│ ├── official/
+│ ├── uploads/
+│ ├── classify.html
+│ ├── index.html
+│ ├── recycling.html
+│ ├── report.html
+│ └── *.html
 │
-├── style.css                  # Global styles
+├── uploads/
 │
-.env                           # Environment variables
-```
+├── train_model.py
+├── predict.py
+├── split_dataset.py
+├── prepare_dataset.py
+├── test_image.py
+├── waste_model.h5
+│
+├── server.js
+├── package.json
+├── .gitignore
+├── .env
+└── README.md
 
----
-
-## 🔄 Workflow
-
-1. User registers and logs in
-2. User submits recyclable waste details
-3. Image is uploaded and stored in `view/uploads`
-4. Data is stored in the database
-5. Official logs into dashboard
-6. Official views details and uploaded images
-7. Official deletes or verifies collected data
-
----
-
-## 🔐 Security Considerations
-
-* Session-based authentication
-* Image upload validation
-* Protected admin routes
-* Duplicate submission checks
 
 ---
 
 ## 🚀 Installation & Setup
 
+### 1️⃣ Clone Repository
 ```bash
-# Clone repository
 git clone <repository-url>
-
-# Install dependencies
+cd binitright
 npm install
+pip install tensorflow numpy pillow
+node server.js
+http://localhost:3000
 
-# Run server
-node app.js
-```
+## 🔐 Security Considerations
+- JWT-based authentication
+- Cookie-based session handling
+- Secure login & protected routes
+- Image upload validation
+- Server-side AI inference isolation
 
-Create a `.env` file for configuration:
+📌 Future Enhancements
 
-```
-PORT=3000
-DB_URL=your_database_url
-SESSION_SECRET=your_secret_key
-```
+Multi-class waste classification
 
----
+Reward points for recycling
 
-## 📌 Future Enhancements
+Cloud deployment (Render / Railway)
 
-* AI-based waste image classification
-* Role-based access control
-* Reward points for recycling
-* Mobile-responsive PWA
-* Deployment on cloud (Render / Railway)
+Mobile-friendly PWA
 
----
+Real-time analytics dashboard
 
-## Hackathon Project 
-## Team : HackHive
----
+🏆 Hackathon Project
 
-## 📄 License
+Team Name: HackHive
+Domain: AI for Sustainability
 
-This project is developed for educational and academic purposes.
+📄 License
+
+This project is developed for educational and academic purposes only.
